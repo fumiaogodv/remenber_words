@@ -1,0 +1,4 @@
+将单词写入json的逻辑：首先在aaa找到今天背的单词然后其words_piped里找到，然后复制到word里然后运行wordintojson
+运行逻辑：realact里是代码，然后wordintojson是一个脚本将word里的内容逐步写入realact里然后写入json
+
+展望：实现在网页就可以执行这些功能
