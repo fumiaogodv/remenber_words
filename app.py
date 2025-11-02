@@ -23,7 +23,7 @@ class PrefixMiddleware(object):
             return ["This URL does not belong to the app.".encode()]
 
 # 将你的 Flask 应用包装在这个中间件中
-app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/hello')
+app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/app4')
 # ##################################################################
 
 
