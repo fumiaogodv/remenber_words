@@ -16,7 +16,7 @@ import sys
 
 # ========== 主逻辑部分 ==========
 
-file_path = Path("list.json")
+file_path = Path("static/list.json")
 
 # 尝试加载已有 JSON 数据
 if file_path.exists():

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>随机背单词</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f7f7f7;
+    }
+    h1 {
+      text-align: center;
+    }
+    #word-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr); /* 两列 */
+      gap: 10px 40px; /* 行间距10px 列间距40px */
+      justify-items: center;
+      margin: 20px auto;
+      max-width: 700px;
+    }
+    .word-item {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 10px 15px;
+      cursor: pointer;
+      width: 80%;
+      text-align: left;
+      transition: all 0.2s;
+      font-size: 18px;
+    }
+    .word-item:hover {
+      background: #e6f7ff;
+      transform: scale(1.03);
+    }
+    #refresh-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #refresh-btn:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>随机背单词</h1>
+  <button id="refresh-btn">重新生成 20 个单词</button>
+  <div id="word-container"></div>
+
+  <script>
+    let wordData = {};
+
+    async function loadWords() {
+      const response = await fetch("static/list.json");  // 或 /
+      wordData = await response.json();
+      generateWords();
+    }
+
+    function generateWords() {
+      const allWords = [];
+
+      // 合并所有日期的单词
+      for (const day in wordData) {
+        for (const english in wordData[day]) {
+          allWords.push({ english, chinese: wordData[day][english] });
+        }
+      }
+
+      // 随机打乱，取 20 个
+      const shuffled = allWords.sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, 20);
+
+      const container = document.getElementById("word-container");
+      container.innerHTML = "";
+
+      selected.forEach(word => {
+        const div = document.createElement("div");
+        div.className = "word-item";
+        div.textContent = word.english;
+
+        // 点击显示 / 隐藏中文
+        div.addEventListener("click", () => {
+          if (div.dataset.shown === "true") {
+            div.textContent = word.english;
+            div.dataset.shown = "false";
+          } else {
+            div.textContent = `${word.english} — ${word.chinese}`;
+            div.dataset.shown = "true";
+          }
+        });
+
+        container.appendChild(div);
+      });
+    }
+
+    document.getElementById("refresh-btn").addEventListener("click", generateWords);
+    loadWords();
+  </script>
+</body>
+</html>

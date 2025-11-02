@@ -4,7 +4,7 @@ from pathlib import Path
 
 # ========= 文件路径 =========
 TXT_FILE = Path("word.txt")
-JSON_FILE = Path("list.json")
+JSON_FILE = Path("static/list.json")
 
 # ========= 读取已有 JSON（如有） =========
 if JSON_FILE.exists():

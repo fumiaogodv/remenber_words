@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>按日期查看单词</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f7f7f7;
+    }
+    h1 {
+      text-align: center;
+    }
+
+    /* 日期按钮区域 */
+    #date-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .date-btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 16px;
+    }
+
+    .date-btn:hover {
+      background: #0056b3;
+      transform: scale(1.05);
+    }
+
+    /* 单词显示区域 */
+    #word-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px 40px;
+      justify-items: center;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .word-item {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 10px 15px;
+      cursor: pointer;
+      width: 80%;
+      text-align: left;
+      transition: all 0.2s;
+      font-size: 18px;
+    }
+
+    .word-item:hover {
+      background: #e6f7ff;
+      transform: scale(1.03);
+    }
+
+    #selected-date {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>按日期查看单词</h1>
+  <div id="date-container"></div>
+  <div id="selected-date"></div>
+  <div id="word-container"></div>
+
+  <script>
+    let wordData = {};
+
+    // 从 static/list.json 加载数据
+    async function loadWords() {
+      const response = await fetch("static/list.json");
+      wordData = await response.json();
+      showDates();
+    }
+
+    // 显示所有日期按钮
+    function showDates() {
+      const container = document.getElementById("date-container");
+      container.innerHTML = "";
+
+      const dates = Object.keys(wordData);
+      dates.forEach(date => {
+        const btn = document.createElement("button");
+        btn.className = "date-btn";
+        btn.textContent = date;
+
+        btn.addEventListener("click", () => showWords(date));
+        container.appendChild(btn);
+      });
+    }
+
+    // 显示选中日期的单词
+    function showWords(date) {
+      const wordContainer = document.getElementById("word-container");
+      const title = document.getElementById("selected-date");
+      wordContainer.innerHTML = "";
+      title.textContent = `📅 ${date} 的单词`;
+
+      const words = wordData[date];
+
+      for (const english in words) {
+        const div = document.createElement("div");
+        div.className = "word-item";
+        div.textContent = english;
+
+        // 点击显示/隐藏中文
+        div.addEventListener("click", () => {
+          if (div.dataset.shown === "true") {
+            div.textContent = english;
+            div.dataset.shown = "false";
+          } else {
+            div.textContent = `${english} — ${words[english]}`;
+            div.dataset.shown = "true";
+          }
+        });
+
+        wordContainer.appendChild(div);
+      }
+    }
+
+    loadWords();
+  </script>
+</body>
+</html>

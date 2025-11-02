@@ -2,7 +2,7 @@ import json
 import random
 
 # ====== 加载词汇 JSON 文件 ======
-with open("list.json", "r", encoding="utf-8") as f:
+with open("static/list.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 
 

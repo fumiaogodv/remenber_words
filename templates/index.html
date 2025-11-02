@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>index page</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+<button id="random">随机生成20个单词</button>
+<button id="look_date">观看每日背诵日期</button>
+</body>
+<script>
+    const random_button = document.getElementById('random');
+    const date = document.getElementById('look_date');
+
+    random_button.addEventListener("click", () => {
+        // 确保生成的 URL 是一个 JavaScript 字符串
+        window.location.href = '{{ url_for("random") }}';
+    });
+
+    date.addEventListener('click', () => {
+        // 确保生成的 URL 是一个 JavaScript 字符串
+        window.location.href = '{{ url_for("date_word") }}';
+    });
+</script>
+</html>
