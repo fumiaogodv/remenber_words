@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
+<<<<<<< HEAD
+    <option name="sdkName" value="Python 3.13 (remenber_words)" />
+  </component>
+=======
     <option name="sdkName" value="Python 3.12 (words)" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (words)" project-jdk-type="Python SDK" />
+>>>>>>> 083451d0d0ec4efce5670257994011cf56fbf819
 </project>
