@@ -13,7 +13,6 @@
       text-align: center;
     }
 
-    /* 日期按钮区域 */
     #date-container {
       display: flex;
       flex-wrap: wrap;
@@ -38,7 +37,6 @@
       transform: scale(1.05);
     }
 
-    /* 单词显示区域 */
     #word-container {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -53,16 +51,33 @@
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       padding: 10px 15px;
-      cursor: pointer;
       width: 80%;
       text-align: left;
       transition: all 0.2s;
       font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .word-item:hover {
       background: #e6f7ff;
       transform: scale(1.03);
+    }
+
+    .forget-btn {
+      background: #ff5252;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .forget-btn:disabled {
+      background: gray;
+      cursor: not-allowed;
     }
 
     #selected-date {
@@ -83,7 +98,7 @@
   <script>
     let wordData = {};
 
-    // 从 static/list.json 加载数据
+    // 从 static/list.json 加载单词
     async function loadWords() {
       const response = await fetch("static/list.json");
       wordData = await response.json();
@@ -94,19 +109,18 @@
     function showDates() {
       const container = document.getElementById("date-container");
       container.innerHTML = "";
-
       const dates = Object.keys(wordData);
+
       dates.forEach(date => {
         const btn = document.createElement("button");
         btn.className = "date-btn";
         btn.textContent = date;
-
         btn.addEventListener("click", () => showWords(date));
         container.appendChild(btn);
       });
     }
 
-    // 显示选中日期的单词
+    // 显示某日期的单词列表
     function showWords(date) {
       const wordContainer = document.getElementById("word-container");
       const title = document.getElementById("selected-date");
@@ -114,25 +128,67 @@
       title.textContent = `📅 ${date} 的单词`;
 
       const words = wordData[date];
-
       for (const english in words) {
+        const chinese = words[english];
         const div = document.createElement("div");
         div.className = "word-item";
-        div.textContent = english;
 
-        // 点击显示/隐藏中文
-        div.addEventListener("click", () => {
-          if (div.dataset.shown === "true") {
-            div.textContent = english;
-            div.dataset.shown = "false";
+        const wordText = document.createElement("span");
+        wordText.textContent = english;
+
+        // 点击显示中文释义
+        wordText.addEventListener("click", () => {
+          if (wordText.dataset.shown === "true") {
+            wordText.textContent = english;
+            wordText.dataset.shown = "false";
           } else {
-            div.textContent = `${english} — ${words[english]}`;
-            div.dataset.shown = "true";
+            wordText.textContent = `${english} — ${chinese}`;
+            wordText.dataset.shown = "true";
           }
         });
 
+        // “陌生”按钮
+        const btn = document.createElement("button");
+        btn.className = "forget-btn";
+        btn.textContent = "陌生";
+        btn.addEventListener("click", async (event) => {
+          event.stopPropagation();
+          await addToForgetList(english, chinese);
+          btn.textContent = "已记录";
+          btn.disabled = true;
+        });
+
+        div.appendChild(wordText);
+        div.appendChild(btn);
         wordContainer.appendChild(div);
       }
+    }
+
+    // 将单词（中英文）添加到 forget.json
+     async function addToForgetList(word, meaning) {
+    const today = getToday();
+    try {
+      const response = await fetch("api/forget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: today,
+          word: word,
+          meaning: meaning
+        })
+      });
+      if (!response.ok) {
+        console.error("保存失败");
+      }
+    } catch (err) {
+      console.error("网络错误:", err);
+    }
+  }
+
+    // 获取当前日期
+    function getToday() {
+      const d = new Date();
+      return `${d.getMonth() + 1}/${d.getDate()}`;
     }
 
     loadWords();

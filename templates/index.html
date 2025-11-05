@@ -4,14 +4,74 @@
 <head>
     <title>index page</title>
     <meta charset="UTF-8">
+    <style>
+       /* CSS */
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center; /* 水平居中 */
+    align-items: center;     /* 垂直居中 */
+    flex-direction: column;  /* 按钮竖直排列 */
+    font-family: Arial, sans-serif;
+    background-color: #f7f7f7;
+}
+
+button {
+    padding: 12px 24px;
+    font-size: 16px;
+    margin: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button#random {
+    background-color: #007bff;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+button#random:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+button#look_date {
+    background-color: #28a745;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+button#forget{
+    background-color: #cc0000;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+button#forget:hover {
+    background-color: #ff6666;
+    transform: scale(1.05);
+}
+
+button#look_date:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+}
+
+    </style>
 </head>
 <body>
-<button id="random">随机生成20个单词</button>
+<button id="random" >随机生成20个单词</button>
 <button id="look_date">观看每日背诵日期</button>
+<button id="forget">查看遗忘的单词</button>
 </body>
 <script>
     const random_button = document.getElementById('random');
     const date = document.getElementById('look_date');
+    const forget=document.getElementById('forget')
 
     random_button.addEventListener("click", () => {
         // 确保生成的 URL 是一个 JavaScript 字符串
@@ -21,6 +81,10 @@
     date.addEventListener('click', () => {
         // 确保生成的 URL 是一个 JavaScript 字符串
         window.location.href = '{{ url_for("date_word") }}';
+    });
+
+    forget.addEventListener('click',()=>{
+        window.location.href='{{ url_for("forget") }}';
     });
 </script>
 </html>

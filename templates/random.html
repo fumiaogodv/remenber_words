@@ -14,8 +14,8 @@
     }
     #word-container {
       display: grid;
-      grid-template-columns: repeat(2, 1fr); /* 两列 */
-      gap: 10px 40px; /* 行间距10px 列间距40px */
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px 40px;
       justify-items: center;
       margin: 20px auto;
       max-width: 700px;
@@ -30,10 +30,26 @@
       text-align: left;
       transition: all 0.2s;
       font-size: 18px;
+      position: relative;
     }
     .word-item:hover {
       background: #e6f7ff;
       transform: scale(1.03);
+    }
+    .forget-btn {
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      background: #ff6666;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .forget-btn:hover {
+      background: #cc0000;
     }
     #refresh-btn {
       display: block;
@@ -56,54 +72,100 @@
   <button id="refresh-btn">重新生成 20 个单词</button>
   <div id="word-container"></div>
 
-  <script>
-    let wordData = {};
+<script>
+  let wordData = {};
 
-    async function loadWords() {
-      const response = await fetch("static/list.json");  // 或 /
-      wordData = await response.json();
-      generateWords();
-    }
+  // 获取今天的日期格式
+  function getToday() {
+    const d = new Date();
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
 
-    function generateWords() {
-      const allWords = [];
-
-      // 合并所有日期的单词
-      for (const day in wordData) {
-        for (const english in wordData[day]) {
-          allWords.push({ english, chinese: wordData[day][english] });
-        }
-      }
-
-      // 随机打乱，取 20 个
-      const shuffled = allWords.sort(() => Math.random() - 0.5);
-      const selected = shuffled.slice(0, 20);
-
-      const container = document.getElementById("word-container");
-      container.innerHTML = "";
-
-      selected.forEach(word => {
-        const div = document.createElement("div");
-        div.className = "word-item";
-        div.textContent = word.english;
-
-        // 点击显示 / 隐藏中文
-        div.addEventListener("click", () => {
-          if (div.dataset.shown === "true") {
-            div.textContent = word.english;
-            div.dataset.shown = "false";
-          } else {
-            div.textContent = `${word.english} — ${word.chinese}`;
-            div.dataset.shown = "true";
-          }
-        });
-
-        container.appendChild(div);
+  // 调用后端接口，将单词和释义保存进 forget.json
+  async function addToForgetList(word, meaning) {
+    const today = getToday();
+    try {
+      const response = await fetch("api/forget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: today,
+          word: word,
+          meaning: meaning
+        })
       });
+      if (!response.ok) {
+        console.error("保存失败");
+      }
+    } catch (err) {
+      console.error("网络错误:", err);
+    }
+  }
+
+  async function loadWords() {
+    const response = await fetch("static/list.json");
+    wordData = await response.json();
+    generateWords();
+  }
+
+  function generateWords() {
+    const allWords = [];
+
+    // 合并所有日期的单词
+    for (const day in wordData) {
+      for (const english in wordData[day]) {
+        allWords.push({ english, chinese: wordData[day][english] });
+      }
     }
 
-    document.getElementById("refresh-btn").addEventListener("click", generateWords);
-    loadWords();
-  </script>
+    // 随机取20个
+    const shuffled = allWords.sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, 20);
+
+    const container = document.getElementById("word-container");
+    container.innerHTML = "";
+
+    selected.forEach(word => {
+      const div = document.createElement("div");
+      div.className = "word-item";
+      div.textContent = word.english;
+
+      // 点击显示 / 隐藏中文
+      div.addEventListener("click", () => {
+        if (div.dataset.shown === "true") {
+          div.textContent = word.english;
+          div.dataset.shown = "false";
+        } else {
+          div.textContent = `${word.english} — ${word.chinese}`;
+          div.dataset.shown = "true";
+        }
+        // 保留按钮
+        div.appendChild(btn);
+      });
+
+      // 创建“陌生”按钮
+      const btn = document.createElement("button");
+      btn.className = "forget-btn";
+      btn.textContent = "陌生";
+
+      btn.addEventListener("click", async (event) => {
+        event.stopPropagation(); // 阻止触发单词点击事件
+        await addToForgetList(word.english, word.chinese);
+        btn.textContent = "已记";
+        btn.disabled = true;
+        btn.style.background = "#aaa";
+      });
+
+      // 添加按钮
+      div.appendChild(btn);
+      container.appendChild(div);
+    });
+  }
+
+  document.getElementById("refresh-btn").addEventListener("click", generateWords);
+  loadWords();
+</script>
+
+
 </body>
 </html>

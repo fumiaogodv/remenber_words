@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>遗忘单词复习</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    #refresh-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #refresh-btn:hover {
+      background: #0056b3;
+    }
+    #word-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px 40px;
+      justify-items: center;
+      margin: 20px auto;
+      max-width: 700px;
+    }
+    .word-item {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 10px 15px;
+      width: 80%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+    .word-item:hover {
+      background: #e6f7ff;
+      transform: scale(1.02);
+    }
+    .remember-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .remember-btn:hover {
+      background: #218838;
+    }
+    .remember-btn:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>遗忘单词复习</h1>
+  <button id="refresh-btn">随机生成 20 个</button>
+  <div id="word-container"></div>
+
+  <script>
+    // 读取 static/forget.json 并生成单词
+    async function loadAndGenerate() {
+      try {
+        const response = await fetch("static/forget.json?_=" + Date.now());
+        // 加上时间戳避免浏览器缓存
+        const forgetData = await response.json();
+
+        const allWords = [];
+        for (const day in forgetData) {
+          for (const english in forgetData[day]) {
+            allWords.push({
+              english,
+              chinese: forgetData[day][english],
+              date: day
+            });
+          }
+        }
+
+        // 随机取 20 个
+        const shuffled = allWords.sort(() => Math.random() - 0.5);
+        const selected = shuffled.slice(0, 20);
+
+        const container = document.getElementById("word-container");
+        container.innerHTML = "";
+
+        selected.forEach(word => {
+          const div = document.createElement("div");
+          div.className = "word-item";
+
+          const wordText = document.createElement("span");
+          wordText.textContent = word.english;
+
+          // 点击显示/隐藏中文
+          wordText.addEventListener("click", () => {
+            if (wordText.dataset.shown === "true") {
+              wordText.textContent = word.english;
+              wordText.dataset.shown = "false";
+            } else {
+              wordText.textContent = `${word.english} — ${word.chinese}`;
+              wordText.dataset.shown = "true";
+            }
+          });
+
+          // “记得”按钮
+          const btn = document.createElement("button");
+          btn.className = "remember-btn";
+          btn.textContent = "记得";
+
+          btn.addEventListener("click", async (event) => {
+            event.stopPropagation();
+            await removeFromForgetList(word.date, word.english);
+            btn.textContent = "已移除";
+            btn.disabled = true;
+            div.style.opacity = "0.5";
+          });
+
+          div.appendChild(wordText);
+          div.appendChild(btn);
+          container.appendChild(div);
+        });
+      } catch (error) {
+        console.error("加载 forget.json 失败:", error);
+      }
+    }
+
+    // 删除接口
+    async function removeFromForgetList(date, english) {
+      await fetch("api/forget/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, english })
+      });
+    }
+
+    // 点击按钮时重新读取并生成
+    document.getElementById("refresh-btn").addEventListener("click", loadAndGenerate);
+
+    // 页面加载时执行一次
+    loadAndGenerate();
+  </script>
+</body>
+</html>
