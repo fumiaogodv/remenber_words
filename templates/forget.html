@@ -4,156 +4,294 @@
   <meta charset="UTF-8">
   <title>遗忘单词复习</title>
   <style>
+    /* 基础和布局 */
     body {
       font-family: Arial, sans-serif;
-      background: #f5f6fa;
       padding: 20px;
+      background: #f7f7f7;
     }
     h1 {
       text-align: center;
-      color: #333;
     }
-    #refresh-btn {
-      display: block;
-      margin: 20px auto;
+    #btn-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* 通用按钮样式 (包含 refresh-btn, show-all-btn, back-btn) */
+    button {
       padding: 10px 20px;
-      background: #007bff;
-      color: white;
+      margin: 5px;
       border: none;
-      border-radius: 6px;
-      cursor: pointer;
+      border-radius: 5px;
       font-size: 16px;
+      cursor: pointer;
+      color: white;
+      background: #007bff; /* 主题蓝色 */
+      transition: background 0.2s;
     }
-    #refresh-btn:hover {
+    button:hover {
       background: #0056b3;
     }
+
+    /* 单词容器布局 */
     #word-container {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px 40px;
       justify-items: center;
-      margin: 20px auto;
+      margin: 20px auto; /* 调整 margin */
       max-width: 700px;
     }
+
+    /* 单词卡片样式 */
     .word-item {
       background: white;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       padding: 10px 15px;
+      cursor: pointer;
       width: 80%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 18px;
+      text-align: left;
       transition: all 0.2s;
+      font-size: 18px;
+      position: relative;
     }
     .word-item:hover {
       background: #e6f7ff;
-      transform: scale(1.02);
+      transform: scale(1.03);
     }
+
+    /* “记得/已移除”按钮样式 (取代原来的 .forget-btn) */
     .remember-btn {
-      background: #28a745;
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      background: #28a745; /* 绿色，表示已掌握/移除 */
       color: white;
       border: none;
-      border-radius: 4px;
-      padding: 4px 8px;
-      cursor: pointer;
+      border-radius: 5px;
+      padding: 3px 8px;
       font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      /* 继承自通用 button 的样式可能会被覆盖，此处需确保定位和颜色正确 */
+      margin: 0; /* 覆盖通用 button 的 margin */
     }
     .remember-btn:hover {
-      background: #218838;
+      background: #1e7e34;
     }
     .remember-btn:disabled {
-      background: gray;
-      cursor: not-allowed;
+        background: #6c757d;
+        cursor: default;
+    }
+
+    /* 分页按钮样式 */
+    .page-btn {
+      background: #ddd;
+      color: black;
+      border: none;
+      padding: 6px 12px;
+      margin: 3px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .page-btn.active {
+      background: #007bff;
+      color: white;
+    }
+    #page-container {
+      text-align: center;
+      margin-top: 15px;
+    }
+    /* 确保随机生成按钮的样式符合要求 (虽然它已经通过通用 button 继承了大部分) */
+    #refresh-btn {
+      display: inline-block; /* 保持在 btn-container 中 */
     }
   </style>
 </head>
 <body>
-  <h1>遗忘单词复习</h1>
-  <button id="refresh-btn">随机生成 20 个</button>
+  <h1>随机背单词</h1>
+
+  <div id="btn-container">
+    <button id="refresh-btn">重新生成 20 个单词</button>
+    <button id="show-all-btn">观看所有遗忘单词</button>
+    <button id="back-btn" style="display:none;">返回随机模式</button>
+  </div>
+
   <div id="word-container"></div>
+  <div id="page-container"></div>
 
-  <script>
-    // 读取 static/forget.json 并生成单词
-    async function loadAndGenerate() {
-      try {
-        const response = await fetch("static/forget.json?_=" + Date.now());
-        // 加上时间戳避免浏览器缓存
-        const forgetData = await response.json();
+<script>
+  let allWords = [];
 
-        const allWords = [];
-        for (const day in forgetData) {
-          for (const english in forgetData[day]) {
-            allWords.push({
-              english,
-              chinese: forgetData[day][english],
-              date: day
-            });
-          }
-        }
-
-        // 随机取 20 个
-        const shuffled = allWords.sort(() => Math.random() - 0.5);
-        const selected = shuffled.slice(0, 20);
-
-        const container = document.getElementById("word-container");
-        container.innerHTML = "";
-
-        selected.forEach(word => {
-          const div = document.createElement("div");
-          div.className = "word-item";
-
-          const wordText = document.createElement("span");
-          wordText.textContent = word.english;
-
-          // 点击显示/隐藏中文
-          wordText.addEventListener("click", () => {
-            if (wordText.dataset.shown === "true") {
-              wordText.textContent = word.english;
-              wordText.dataset.shown = "false";
-            } else {
-              wordText.textContent = `${word.english} — ${word.chinese}`;
-              wordText.dataset.shown = "true";
-            }
-          });
-
-          // “记得”按钮
-          const btn = document.createElement("button");
-          btn.className = "remember-btn";
-          btn.textContent = "记得";
-
-          btn.addEventListener("click", async (event) => {
-            event.stopPropagation();
-            await removeFromForgetList(word.date, word.english);
-            btn.textContent = "已移除";
-            btn.disabled = true;
-            div.style.opacity = "0.5";
-          });
-
-          div.appendChild(wordText);
-          div.appendChild(btn);
-          container.appendChild(div);
-        });
-      } catch (error) {
-        console.error("加载 forget.json 失败:", error);
-      }
-    }
-
-    // 删除接口
-    async function removeFromForgetList(date, english) {
+  // 删除接口 (用于“记得”按钮)
+  async function removeFromForgetList(date, english) {
+    try {
+      // 避免浏览器缓存，可以考虑在POST请求中省略时间戳，专注于业务逻辑
       await fetch("api/forget/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ date, english })
       });
+    } catch (err) {
+      console.error("移除失败:", err);
+    }
+  }
+
+  // 加载单词文件 (只负责加载并更新 allWords)
+  async function loadWords() {
+    try {
+      // 加上时间戳或使用缓存控制头（如果后端允许）来确保读取最新文件
+      const response = await fetch("static/forget.json?t=" + Date.now());
+      const wordData = await response.json();
+
+      const tempWords = [];
+      for (const day in wordData) {
+        for (const english in wordData[day]) {
+          // 存储日期信息，用于移除操作
+          tempWords.push({ english, chinese: wordData[day][english], date: day });
+        }
+      }
+      allWords = tempWords; // 更新全局的 allWords 数组
+      console.log(`成功加载 ${allWords.length} 个遗忘单词。`);
+    } catch (error) {
+      console.error("加载 forget.json 失败:", error);
+      allWords = []; // 加载失败时清空列表
+    }
+  }
+
+  // 渲染单词 (保持不变)
+  function renderWords(list, showRememberBtn = true) {
+    const container = document.getElementById("word-container");
+    container.innerHTML = "";
+
+    list.forEach(word => {
+      const div = document.createElement("div");
+      div.className = "word-item";
+      div.textContent = word.english;
+      div.dataset.shown = "false";
+
+      // 记得按钮的引用，需要在点击事件中使用
+      let btn;
+
+      // 点击显示中英文
+      div.addEventListener("click", () => {
+        if (div.dataset.shown === "true") {
+          div.textContent = word.english;
+          div.dataset.shown = "false";
+        } else {
+          div.textContent = `${word.english} — ${word.chinese}`;
+          div.dataset.shown = "true";
+        }
+        // 如果显示“记得”按钮，则重新将其添加回 div
+        // 注意：btn 在 if (showRememberBtn) 块中被定义
+        if (showRememberBtn && btn) div.appendChild(btn);
+      });
+
+      // 记得按钮 (用于移除)
+      if (showRememberBtn) {
+        btn = document.createElement("button");
+        btn.className = "remember-btn";
+        btn.textContent = "记得";
+
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          // 调用移除接口
+          await removeFromForgetList(word.date, word.english);
+          btn.textContent = "已移除";
+          btn.disabled = true;
+          div.style.opacity = "0.5";
+        });
+        div.appendChild(btn);
+      }
+
+      container.appendChild(div);
+    });
+  }
+
+  // 生成随机20个 (修改：先加载最新数据)
+  async function generateRandomWords() {
+    await loadWords(); // 每次生成前都加载最新数据
+
+    if (allWords.length === 0) {
+        document.getElementById("word-container").innerHTML = "<p style='text-align:center;'>恭喜，遗忘单词列表为空！</p>";
+        return;
     }
 
-    // 点击按钮时重新读取并生成
-    document.getElementById("refresh-btn").addEventListener("click", loadAndGenerate);
+    const shuffled = allWords.sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, 20);
+    // 随机模式下显示“记得”按钮
+    renderWords(selected, true);
+  }
 
-    // 页面加载时执行一次
-    loadAndGenerate();
-  </script>
+  // 展示所有遗忘单词 (修改：先加载最新数据)
+  async function showAllWords() {
+    await loadWords(); // 每次查看前都加载最新数据
+
+    // 清空页面容器和分页
+    document.getElementById("page-container").innerHTML = "";
+
+    if (allWords.length === 0) {
+        document.getElementById("word-container").innerHTML = "<p style='text-align:center;'>恭喜，遗忘单词列表为空！</p>";
+        // 按钮切换状态
+        document.getElementById("refresh-btn").style.display = "inline-block";
+        document.getElementById("show-all-btn").style.display = "inline-block";
+        document.getElementById("back-btn").style.display = "none";
+        return;
+    }
+
+    // 按顺序分页
+    const pageSize = 20;
+    const pageCount = Math.ceil(allWords.length / pageSize);
+    const pageContainer = document.getElementById("page-container");
+
+
+    for (let i = 0; i < pageCount; i++) {
+      const btn = document.createElement("button");
+      btn.className = "page-btn";
+      btn.textContent = i + 1;
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".page-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const start = i * pageSize;
+        const end = start + pageSize;
+        // 全览模式下不显示“记得”按钮
+        renderWords(allWords.slice(start, end), false);
+      });
+      pageContainer.appendChild(btn);
+    }
+
+    if (pageCount > 0) {
+      pageContainer.firstChild.classList.add("active");
+      renderWords(allWords.slice(0, pageSize), false);
+    }
+
+    // 按钮切换状态
+    document.getElementById("refresh-btn").style.display = "none";
+    document.getElementById("show-all-btn").style.display = "none";
+    document.getElementById("back-btn").style.display = "inline-block";
+  }
+
+  // 返回随机模式 (修改：直接调用 generateRandomWords，它会先加载数据)
+  function backToRandom() {
+    document.getElementById("page-container").innerHTML = "";
+    generateRandomWords(); // generateRandomWords 会处理按钮显示
+
+    // 按钮切换状态
+    document.getElementById("refresh-btn").style.display = "inline-block";
+    document.getElementById("show-all-btn").style.display = "inline-block";
+    document.getElementById("back-btn").style.display = "none";
+  }
+
+  // 按钮事件 (修改：直接调用异步函数)
+  document.getElementById("refresh-btn").addEventListener("click", generateRandomWords);
+  document.getElementById("show-all-btn").addEventListener("click", showAllWords);
+  document.getElementById("back-btn").addEventListener("click", backToRandom);
+
+  // 初始化 (修改：直接调用 generateRandomWords 来加载数据并渲染首页)
+  generateRandomWords();
+</script>
+
 </body>
 </html>
